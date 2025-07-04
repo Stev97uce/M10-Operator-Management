@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-operator
+    environment:
+      SA_PASSWORD: "lavanet"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - ./sqlserver/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - lavanet
+
+  operator-management:
+    build: .
+    container_name: operator-management
+    ports:
+      - "8001:8001"
+    depends_on:
+      - sqlserver
+    environment:
+      - APP_PORT=8001
+      - MSSQL_SERVER=sqlserver
+      - MSSQL_USER=sa
+      - MSSQL_PASSWORD=lavanet
+      - MSSQL_DB=operator_db
+      - USER_SERVICE=http://user-profile-service:8000
+      - AUTH_SERVICE=http://auth-service:8000
+    networks:
+      - lavanet
+
+networks:
+  lavanet:
+    driver: bridge
